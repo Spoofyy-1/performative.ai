@@ -2,64 +2,61 @@
 
 import React, { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import Link from 'next/link'
 
-interface ToteResult {
-  isTote: boolean
-  confidence: number
-  explanation: string
-  loading?: boolean
+interface AnalysisResult {
+  isTote?: boolean
+  confidence?: number
+  explanation?: string
+  sustainability?: number
+  brandValue?: number
+  aestheticScore?: number
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export default function ToteDetector() {
-  const [analysis, setAnalysis] = useState<ToteResult | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [image, setImage] = useState<string | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [result, setResult] = useState<AnalysisResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const analyzeImage = async (file: File) => {
-    setAnalysis({ isTote: false, confidence: 0, explanation: '', loading: true })
-    
+    setAnalyzing(true)
+    setError(null)
+    setResult(null)
+
     try {
       const formData = new FormData()
       formData.append('image', file)
 
       const response = await fetch(`${API_URL}/api/analyze`, {
         method: 'POST',
-        body: formData,
         headers: {
           'X-Model-Type': 'tote'
-        }
+        },
+        body: formData,
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Analysis failed' }))
-        throw new Error(errorData.error || `Server error: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const result = await response.json()
-      setAnalysis(result)
+      const data = await response.json()
+      setResult(data)
     } catch (error) {
-      console.error('Error analyzing image:', error)
-      setAnalysis({
-        isTote: false,
-        confidence: 0,
-        explanation: error instanceof Error 
-          ? `Error: ${error.message}` 
-          : 'Sorry, there was an error analyzing your image. Please try again.',
-      })
+      console.error('Analysis failed:', error)
+      setError('Failed to analyze image. Please try again.')
+    } finally {
+      setAnalyzing(false)
     }
   }
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-      analyzeImage(file)
+      const imageUrl = URL.createObjectURL(file)
+      setImage(imageUrl)
+      await analyzeImage(file)
     }
   }, [])
 
@@ -68,201 +65,234 @@ export default function ToteDetector() {
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp']
     },
-    multiple: false
+    maxFiles: 1
   })
 
-  const resetAnalysis = () => {
-    setAnalysis(null)
-    setImagePreview(null)
+  const getScoreColor = (score?: number) => {
+    if (!score) return 'text-slate-600 bg-slate-100'
+    if (score >= 80) return 'text-emerald-600 bg-emerald-50'
+    if (score >= 60) return 'text-amber-600 bg-amber-50'
+    return 'text-orange-600 bg-orange-50'
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-900 to-red-900 relative overflow-hidden">
-      {/* Sophisticated Background Pattern */}
-      <div className="absolute inset-0">
-        <div className="absolute top-32 left-32 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-32 right-32 w-80 h-80 bg-orange-500/15 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-2/3 left-1/4 w-64 h-64 bg-red-500/15 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        
-        {/* Subtle Grid Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="w-full h-full" style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px'
-          }}></div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      {/* Soft animated background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-amber-100/30 to-orange-100/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-yellow-100/30 to-amber-100/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-orange-100/30 to-amber-100/30 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <Link 
-          href="/" 
-          className="inline-flex items-center text-amber-300 hover:text-white mb-8 transition-all duration-300 group"
-        >
-          <span className="mr-2 transform group-hover:-translate-x-1 transition-transform">←</span>
-          Back to Performative.AI
-        </Link>
-
+      <div className="relative z-10 container mx-auto px-6 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-amber-600 to-orange-700 rounded-3xl mb-6 shadow-2xl shadow-amber-500/25">
-            <span className="text-4xl">👜</span>
+          <div className="inline-flex items-center mb-6">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="flex items-center text-slate-600 hover:text-slate-800 transition-colors mr-6"
+            >
+              ← Back to Performative.AI
+            </button>
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
-            <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
+          
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <span className="text-5xl">👜</span>
+            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 bg-clip-text text-transparent">
               Tote.AI
-            </span>
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Analyze <span className="text-amber-400 font-semibold">tote bag aesthetics</span> and brand recognition. 
-            From sustainable canvas to luxury designer pieces, we evaluate the cultural significance of your carry.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 mt-6">
-            <span className="px-4 py-2 bg-amber-500/20 text-amber-300 rounded-full text-sm border border-amber-500/30 backdrop-blur-sm">
-              🌱 Sustainable Materials
-            </span>
-            <span className="px-4 py-2 bg-orange-500/20 text-orange-300 rounded-full text-sm border border-orange-500/30 backdrop-blur-sm">
-              👑 Luxury Brand Recognition
-            </span>
-            <span className="px-4 py-2 bg-red-500/20 text-red-300 rounded-full text-sm border border-red-500/30 backdrop-blur-sm">
-              🎨 Aesthetic Scoring
-            </span>
+            </h1>
           </div>
+          
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Drop a photo and discover if it contains tote bags with AI precision. Perfect for 
+            identifying sustainable carriers and analyzing brand value!
+          </p>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-6xl mx-auto">
-          {!imagePreview ? (
-            <div
-              {...getRootProps()}
-              className={`group relative border-2 border-dashed border-amber-400/40 rounded-2xl p-16 text-center cursor-pointer transition-all duration-500 hover:border-amber-400/70 hover:bg-amber-500/5 backdrop-blur-sm bg-white/5 ${
-                isDragActive ? 'border-amber-400 bg-amber-500/10 scale-105' : ''
-              }`}
-            >
-              <input {...getInputProps()} />
-              <div className="space-y-6">
-                <div className="text-8xl group-hover:scale-110 transition-transform duration-300 group-hover:rotate-12">👜</div>
-                <div>
-                  <p className="text-2xl font-bold text-white mb-3">
-                    {isDragActive ? '✨ Drop your tote here!' : '🎯 Upload to analyze tote aesthetics'}
-                  </p>
-                  <p className="text-gray-300 text-lg">Drag & drop or click to evaluate your bag game</p>
-                  <p className="text-sm text-gray-400 mt-3 max-w-md mx-auto">
-                    Works with canvas totes, designer bags, branded carriers, and market bags
-                  </p>
-                </div>
+        <div className="max-w-4xl mx-auto">
+          {/* Upload Zone */}
+          <div
+            {...getRootProps()}
+            className={`
+              relative border-2 border-dashed rounded-3xl p-12 text-center cursor-pointer
+              transition-all duration-300 bg-white/50 backdrop-blur-sm
+              ${isDragActive 
+                ? 'border-amber-300 bg-amber-50/80 scale-105' 
+                : 'border-gray-300 hover:border-amber-300 hover:bg-amber-50/50'
+              }
+            `}
+          >
+            <input {...getInputProps()} />
+            
+            <div className="mb-6">
+              <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center border border-amber-200/50">
+                <span className="text-4xl">📷</span>
               </div>
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <h3 className="text-2xl font-semibold text-slate-700 mb-2">
+                Drag & drop an image here
+              </h3>
+              <p className="text-slate-500 mb-1">or click to select a file</p>
+              <p className="text-sm text-slate-400">Supports JPG, PNG, and WebP files</p>
             </div>
-          ) : (
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 overflow-hidden shadow-2xl">
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div className="p-8">
-                  <img
-                    src={imagePreview}
-                    alt="Uploaded image"
-                    className="w-full h-80 object-cover rounded-2xl shadow-lg"
-                  />
-                  <button
-                    onClick={resetAnalysis}
-                    className="mt-6 w-full px-6 py-4 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
-                  >
-                    Analyze Another Tote
-                  </button>
+
+            {analyzing && (
+              <div className="flex items-center justify-center gap-3">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-amber-300 border-t-amber-600"></div>
+                <span className="text-slate-600">Analyzing for tote bags...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Results Section */}
+          {(image || result || error) && (
+            <div className="mt-12 grid md:grid-cols-2 gap-8">
+              {/* Image Preview */}
+              {image && (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold text-slate-700">Uploaded Image</h3>
+                  <div className="rounded-2xl overflow-hidden border border-gray-200/50 bg-white/50 backdrop-blur-sm p-4">
+                    <img 
+                      src={image} 
+                      alt="Uploaded for analysis" 
+                      className="w-full h-auto rounded-xl shadow-sm"
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div className="p-8">
-                  <h2 className="text-3xl font-bold text-white mb-8">Tote Analysis</h2>
+              {/* Analysis Results */}
+              {(result || error) && (
+                <div className="space-y-6">
+                  <h3 className="text-xl font-semibold text-slate-700">Analysis Results</h3>
                   
-                  {analysis?.loading ? (
-                    <div className="space-y-6">
-                      <div className="animate-pulse space-y-4">
-                        <div className="h-6 bg-amber-300/20 rounded-lg w-3/4"></div>
-                        <div className="h-6 bg-orange-300/20 rounded-lg w-1/2"></div>
-                        <div className="h-24 bg-red-300/20 rounded-lg"></div>
+                  {error ? (
+                    <div className="p-6 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl">
+                      <div className="flex items-center gap-3 text-red-600">
+                        <span className="text-2xl">⚠️</span>
+                        <p className="font-medium">{error}</p>
                       </div>
-                      <p className="text-gray-300 text-lg">🧠 AI is evaluating bag aesthetics...</p>
                     </div>
-                  ) : analysis ? (
-                    <div className="space-y-8">
-                      <div className={`text-center p-6 rounded-2xl ${
-                        analysis.isTote 
-                          ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-400/30' 
-                          : 'bg-gradient-to-r from-gray-500/20 to-slate-500/20 border border-gray-400/30'
-                      }`}>
-                        <div className={`text-6xl mb-4 ${analysis.isTote ? 'animate-bounce' : ''}`}>
-                          {analysis.isTote ? '👜✨' : '🔍❌'}
+                  ) : result ? (
+                    <div className="space-y-4">
+                      {/* Main Result */}
+                      <div className="p-6 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-2xl">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-lg font-medium text-slate-700">
+                            {result.isTote ? '✅ Tote Bag Detected!' : '❌ No Tote Bag Found'}
+                          </span>
+                          {result.confidence && (
+                            <span className="px-3 py-1 bg-amber-100/80 text-amber-700 rounded-full text-sm font-medium">
+                              {Math.round(result.confidence)}% confident
+                            </span>
+                          )}
                         </div>
-                        <div className={`text-2xl font-bold mb-2 ${
-                          analysis.isTote ? 'text-amber-400' : 'text-gray-400'
-                        }`}>
-                          {analysis.isTote ? 'TOTE DETECTED!' : 'No Tote Found'}
-                        </div>
-                        <div className="text-gray-300">
-                          {analysis.isTote ? 'Bag game recognized' : 'Try another image'}
-                        </div>
+                        
+                        {/* Confidence Bar */}
+                        {result.confidence && (
+                          <div className="mb-4">
+                            <div className="flex justify-between text-sm text-slate-600 mb-2">
+                              <span>Confidence Level</span>
+                              <span>{Math.round(result.confidence)}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200/50 rounded-full h-3">
+                              <div 
+                                className="bg-gradient-to-r from-amber-400 to-orange-500 h-3 rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${result.confidence}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Explanation */}
+                        {result.explanation && (
+                          <div className="mt-4 p-4 bg-slate-50/80 rounded-xl">
+                            <p className="text-slate-600 leading-relaxed">{result.explanation}</p>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="space-y-4">
-                        <div className="flex justify-between text-sm text-gray-300">
-                          <span>Detection Confidence</span>
-                          <span className="font-semibold">{analysis.confidence}%</span>
-                        </div>
-                        <div className="w-full bg-white/10 rounded-full h-4">
-                          <div 
-                            className={`h-4 rounded-full transition-all duration-1000 ${
-                              analysis.isTote 
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-600' 
-                                : 'bg-gradient-to-r from-gray-500 to-slate-600'
-                            }`}
-                            style={{ width: `${analysis.confidence}%` }}
-                          ></div>
-                        </div>
-                      </div>
+                      {/* Additional Metrics */}
+                      {result.isTote && (
+                        <div className="grid grid-cols-1 gap-4">
+                          {/* Sustainability Score */}
+                          {result.sustainability && (
+                            <div className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl">
+                              <div className="mb-2">
+                                <div className="flex justify-between text-sm text-slate-600 mb-1">
+                                  <span className="flex items-center gap-2">
+                                    <span>🌱</span>
+                                    Sustainability Score
+                                  </span>
+                                  <span>{result.sustainability}/100</span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-gray-200/50 rounded-full h-2">
+                                <div 
+                                  className="bg-gradient-to-r from-emerald-400 to-green-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                                  style={{ width: `${result.sustainability}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
 
-                      <div className="bg-white/5 rounded-xl p-6">
-                        <h4 className="text-white font-semibold mb-3 flex items-center">
-                          <span className="mr-2">🔍</span>
-                          AI Analysis
-                        </h4>
-                        <p className="text-gray-300 leading-relaxed">{analysis.explanation}</p>
-                      </div>
+                          {/* Brand Value */}
+                          {result.brandValue && (
+                            <div className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl">
+                              <div className="mb-2">
+                                <div className="flex justify-between text-sm text-slate-600 mb-1">
+                                  <span className="flex items-center gap-2">
+                                    <span>💎</span>
+                                    Brand Value
+                                  </span>
+                                  <span>{result.brandValue}/100</span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-gray-200/50 rounded-full h-2">
+                                <div 
+                                  className="bg-gradient-to-r from-purple-400 to-indigo-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                                  style={{ width: `${result.brandValue}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
 
-                      {analysis.isTote && (
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                          <div className="bg-amber-500/20 rounded-xl p-4">
-                            <div className="text-2xl mb-2">🌱</div>
-                            <div className="text-white font-semibold text-sm">Sustainability</div>
-                            <div className="text-amber-300 text-xs">Eco-Conscious</div>
-                          </div>
-                          <div className="bg-orange-500/20 rounded-xl p-4">
-                            <div className="text-2xl mb-2">💰</div>
-                            <div className="text-white font-semibold text-sm">Brand Value</div>
-                            <div className="text-orange-300 text-xs">Quality Detected</div>
-                          </div>
-                          <div className="bg-red-500/20 rounded-xl p-4">
-                            <div className="text-2xl mb-2">🎯</div>
-                            <div className="text-white font-semibold text-sm">Aesthetic Score</div>
-                            <div className="text-red-300 text-xs">High Appeal</div>
-                          </div>
+                          {/* Aesthetic Score */}
+                          {result.aestheticScore && (
+                            <div className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-xl">
+                              <div className="mb-2">
+                                <div className="flex justify-between text-sm text-slate-600 mb-1">
+                                  <span className="flex items-center gap-2">
+                                    <span>✨</span>
+                                    Aesthetic Score
+                                  </span>
+                                  <span>{result.aestheticScore}/100</span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-gray-200/50 rounded-full h-2">
+                                <div 
+                                  className="bg-gradient-to-r from-amber-400 to-orange-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                                  style={{ width: `${result.aestheticScore}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   ) : null}
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-16 text-gray-400">
-          <p className="mb-2">Part of the Performative.AI Suite • Elevating Bag Culture</p>
-          <p className="text-sm">Powered by OpenAI Vision • Designed for the aesthetically conscious</p>
+        <div className="text-center mt-16 pt-8 border-t border-gray-200/50">
+          <p className="text-slate-500">
+            Powered by OpenAI Vision API • Part of Performative.AI
+          </p>
         </div>
       </div>
-    </main>
+    </div>
   )
 } 
