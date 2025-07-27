@@ -36,6 +36,7 @@ const analysisLimiter = rateLimit({
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [
+        'https://performative-ai-p4si-34u5fy905-spoofyy-1s-projects.vercel.app',
         'https://performative-ai-p4si-lkw5u4bqc-spoofyy-1s-projects.vercel.app',
         'https://*.vercel.app',
         /^https:\/\/.*\.vercel\.app$/,
