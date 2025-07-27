@@ -107,8 +107,9 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Matcha.AI Backend running on port ${PORT}`);
+const port = parseInt(PORT as string) || 8000;
+app.listen(port, '0.0.0.0', () => {
+  console.log(`🚀 Matcha.AI Backend running on port ${port}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  console.log(`🏥 Health check: http://0.0.0.0:${port}/health`);
 }); 
