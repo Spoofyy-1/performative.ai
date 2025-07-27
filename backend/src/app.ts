@@ -14,22 +14,31 @@ const PORT = process.env.PORT || 8000;
 // Security middleware
 app.use(helmet());
 
-// Rate limiting
+// Rate limiting with better multi-user support
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 200, // Increased from 100 to support more concurrent users
   message: {
-    error: 'Too many requests from this IP, please try again later.'
-  }
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-// Analysis-specific rate limiting (more restrictive)
+// Analysis-specific rate limiting (balanced for multi-user)
 const analysisLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10, // Limit each IP to 10 analysis requests per minute
+  max: 15, // Increased from 10 to 15 analysis requests per minute
   message: {
-    error: 'Too many analysis requests, please wait before trying again.'
-  }
+    error: 'Too many analysis requests, please wait before trying again.',
+    retryAfter: '1 minute',
+    suggestion: 'Try uploading a different image or wait a moment.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Skip rate limiting for health checks
+  skip: (req) => req.path === '/health',
 });
 
 // CORS configuration - Updated to include actual Vercel domains
@@ -55,9 +64,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(limiter);
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Body parsing middleware with optimized limits for concurrent users
+app.use(express.json({ 
+  limit: '10mb'
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  // Prevent parameter pollution attacks
+  parameterLimit: 20
+}));
 
 // Health check endpoint
 app.get('/health', (req, res) => {

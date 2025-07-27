@@ -190,14 +190,25 @@ Respond ONLY with a valid JSON object containing:
 
 // POST /api/analyze
 router.post('/', upload.single('image'), async (req: express.Request, res: express.Response) => {
+  const requestId = Math.random().toString(36).substring(2, 15);
+  const startTime = Date.now();
+  
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No image file provided' });
+      return res.status(400).json({ 
+        error: 'No image file provided',
+        requestId,
+        timestamp: new Date().toISOString()
+      });
     }
 
     if (!process.env.OPENAI_API_KEY) {
       console.error('OPENAI_API_KEY not configured');
-      return res.status(500).json({ error: 'AI service not configured' });
+      return res.status(500).json({ 
+        error: 'AI service not configured',
+        requestId,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // Get model type from header, default to matcha
@@ -207,12 +218,12 @@ router.post('/', upload.single('image'), async (req: express.Request, res: expre
     const base64Image = req.file.buffer.toString('base64');
     const mimeType = req.file.mimetype;
 
-    console.log(`🔍 Analyzing image with ${modelType} model: ${req.file.originalname} (${req.file.size} bytes)`);
+    console.log(`🔍 [${requestId}] Analyzing image with ${modelType} model: ${req.file.originalname} (${req.file.size} bytes)`);
 
     // Get the appropriate prompt for the model
     const prompt = getPromptForModel(modelType);
 
-    // Call OpenAI Vision API
+    // Call OpenAI Vision API with timeout and retry logic
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -233,7 +244,10 @@ router.post('/', upload.single('image'), async (req: express.Request, res: expre
           ]
         }
       ],
-      max_tokens: 500
+      max_tokens: 500,
+    }, {
+      // Add request timeout for better concurrent handling
+      timeout: 30000, // 30 seconds
     });
 
     const content = response.choices[0]?.message?.content;
@@ -307,7 +321,7 @@ router.post('/', upload.single('image'), async (req: express.Request, res: expre
                            modelType === 'performative' ? (analysis.isPerformative ? 'Performative' : 'Not performative') :
                            'Unknown';
 
-      console.log(`✅ Analysis complete (${modelType}): ${detectionType} (${analysis.confidence}% confidence)`);
+      console.log(`✅ [${requestId}] Analysis complete (${modelType}): ${detectionType} (${analysis.confidence}% confidence)`);
       
       res.json(analysis);
     } catch (parseError) {
@@ -344,7 +358,7 @@ router.post('/', upload.single('image'), async (req: express.Request, res: expre
         fallbackResult.detectedItems = [];
       }
 
-      console.log(`⚠️  Fallback analysis (${modelType})`);
+      console.log(`⚠️  [${requestId}] Fallback analysis (${modelType})`);
       
       res.json(fallbackResult);
     }
@@ -356,18 +370,24 @@ router.post('/', upload.single('image'), async (req: express.Request, res: expre
     if (error instanceof Error) {
       if (error.message.includes('rate_limit')) {
         return res.status(429).json({ 
-          error: 'AI service rate limit exceeded. Please try again later.' 
+          error: 'AI service rate limit exceeded. Please try again later.',
+          requestId,
+          timestamp: new Date().toISOString()
         });
       }
       if (error.message.includes('invalid_api_key')) {
         return res.status(500).json({ 
-          error: 'AI service configuration error' 
+          error: 'AI service configuration error',
+          requestId,
+          timestamp: new Date().toISOString()
         });
       }
     }
     
     res.status(500).json({ 
-      error: 'Failed to analyze image. Please try again.' 
+      error: 'Failed to analyze image. Please try again.',
+      requestId,
+      timestamp: new Date().toISOString()
     });
   }
 });
