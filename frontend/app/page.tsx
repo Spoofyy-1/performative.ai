@@ -194,59 +194,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Flagship Feature Callout */}
-        <div className="max-w-6xl mx-auto mt-24">
-          <div className="bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 backdrop-blur-xl rounded-3xl p-12 border border-violet-500/20 relative overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5"></div>
-            
-            <div className="relative z-10 text-center">
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-violet-600 to-fuchsia-700 rounded-full mb-8 shadow-2xl shadow-violet-500/25">
-                <span className="text-4xl">🎭</span>
-              </div>
-              
-              <h3 className="text-4xl font-black text-white mb-6">
-                🎭 Perform.AI - <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">The Ultimate Cultural Detector</span>
-              </h3>
-              
-              <p className="text-gray-300 text-xl mb-8 max-w-4xl mx-auto leading-relaxed">
-                Our flagship model analyzes photos of males for <span className="text-violet-400 font-semibold">performative traits</span> trending in 2025 TikTok culture. 
-                Detects Labubu keychains, carabiners, matcha accessories, and other sigma male indicators with unprecedented accuracy.
-              </p>
-              
-              <div className="grid md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="text-3xl mb-3">👹</div>
-                  <div className="text-white font-bold mb-2">Status Symbols</div>
-                  <div className="text-gray-400 text-sm">Labubu, designer charms</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="text-3xl mb-3">🔗</div>
-                  <div className="text-white font-bold mb-2">Functional Gear</div>
-                  <div className="text-gray-400 text-sm">Carabiners, utility clips</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="text-3xl mb-3">🍵</div>
-                  <div className="text-white font-bold mb-2">Aesthetic Items</div>
-                  <div className="text-gray-400 text-sm">Matcha, skincare</div>
-                </div>
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-                  <div className="text-3xl mb-3">👜</div>
-                  <div className="text-white font-bold mb-2">Bag Game</div>
-                  <div className="text-gray-400 text-sm">Totes, crossbody bags</div>
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => handleModelSelect(MODELS[3])}
-                className="px-10 py-5 bg-gradient-to-r from-violet-600 to-fuchsia-700 hover:from-violet-700 hover:to-fuchsia-800 text-white font-bold rounded-xl shadow-2xl hover:shadow-violet-500/25 transform transition-all duration-300 hover:scale-105 text-xl"
-              >
-                Try Perform.AI Now
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* Footer */}
         <div className="text-center mt-24 text-gray-400">
           <p className="text-lg mb-4">Built for the extremely online generation</p>
