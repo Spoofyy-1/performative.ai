@@ -32,19 +32,23 @@ const analysisLimiter = rateLimit({
   }
 });
 
-// CORS configuration
+// CORS configuration - Updated to include actual Vercel domains
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [
-        'https://matcha-ai.vercel.app',
-        'https://*.vercel.app'
+        'https://performative-ai-p4si-lkw5u4bqc-spoofyy-1s-projects.vercel.app',
+        'https://*.vercel.app',
+        /^https:\/\/.*\.vercel\.app$/,
+        /^https:\/\/.*-spoofyy-1s-projects\.vercel\.app$/
       ]
     : [
         'http://localhost:3000',
         'http://127.0.0.1:3000'
       ],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Model-Type']
 };
 
 app.use(cors(corsOptions));
