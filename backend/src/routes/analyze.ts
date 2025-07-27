@@ -40,78 +40,148 @@ interface AnalysisResult {
 function getPromptForModel(modelType: string): string {
   switch (modelType) {
     case 'matcha':
-      return `Please analyze this image and determine if it contains matcha (the Japanese green tea powder). Look for:
+      return `Please analyze this image and determine if it contains ACTUAL MATCHA (Japanese green tea powder) or matcha-flavored items.
 
-1. The distinctive bright green color of matcha
-2. Matcha-flavored foods, drinks, or desserts (matcha latte, matcha ice cream, matcha cake, etc.)
-3. Matcha powder itself
-4. Any matcha-related items
+**REAL MATCHA CHARACTERISTICS:**
+1. **Distinctive bright green color** - Vibrant, almost neon green (not just any green)
+2. **Fine powder texture** - When visible as powder, very fine and smooth
+3. **Japanese origin context** - Traditional or modern Japanese presentation
+
+**MATCHA ITEMS TO DETECT:**
+- Matcha powder itself (bright green powder)
+- Matcha lattes/drinks (distinctive green color)
+- Matcha ice cream, cakes, cookies, desserts
+- Matcha Kit-Kats or Japanese sweets
+- Traditional matcha tea ceremony items
+
+**NOT MATCHA:**
+- Regular green tea (different color, not powder-based)
+- Green smoothies or vegetable drinks
+- Mint-flavored items
+- Artificial green coloring
+- Green vegetables or herbs
+
+**BE STRICT:** Only identify genuine matcha or matcha-flavored items with the characteristic bright green color.
 
 Respond ONLY with a valid JSON object containing:
-- isMatcha: boolean (true if matcha is detected)
+- isMatcha: boolean (true only if genuine matcha detected)
 - confidence: number (0-100, your confidence percentage)
 - explanation: string (detailed explanation of what you see and why you think it contains/doesn't contain matcha)`;
 
     case 'labubu':
-      return `Please analyze this image and determine if it contains Labubu dolls or figures. Labubu are small monster-like creatures with:
+      return `Please analyze this image and determine if it contains LABUBU characters or figures. Labubu are specific collectible characters with VERY distinct features:
 
-1. Fuzzy/plush texture and pastel colors
-2. Sharp teeth/fangs and elf-like ears
-3. Small keychain or figure size
-4. Often attached to bags as charms
-5. Blind box toy packaging
+**AUTHENTIC LABUBU CHARACTERISTICS:**
+1. **Creature design** - Small monster/elf-like beings with distinctive ears
+2. **Sharp teeth/fangs** - Visible pointed teeth in mouth
+3. **Elf-like pointed ears** - Distinctive ear shape
+4. **Fuzzy/plush texture** - Soft, stuffed animal appearance
+5. **Pop Mart branding** - Often associated with Pop Mart blind boxes
+6. **Pastel colors** - Usually soft pink, white, yellow, or muted tones
+
+**COMMON LABUBU FORMS:**
+- Keychain attachments on bags
+- Small collectible figures (2-6 inches)
+- Blind box toys with Pop Mart packaging
+- Plush versions with characteristic features
+
+**NOT LABUBU:**
+- Other collectible figures or toys
+- Generic plush animals
+- Different anime/cartoon characters
+- Regular keychains without Labubu features
+
+**BE VERY SPECIFIC:** Only identify genuine Labubu characters with the distinctive ear and teeth features.
 
 Respond ONLY with a valid JSON object containing:
-- isLabubu: boolean (true if Labubu is detected)
+- isLabubu: boolean (true only if genuine Labubu character detected)
 - confidence: number (0-100, your confidence percentage)
-- explanation: string (detailed explanation of what you see)`;
+- explanation: string (detailed explanation of what you see and specific Labubu features identified)
+- status: string ("authentic", "replica", or "uncertain")
+- trend: string ("rising", "peak", or "stable")
+- popularity: number (0-100, current trend popularity)`;
 
     case 'tote':
-      return `Please analyze this image and determine if it contains tote bags. Look for:
+      return `Please analyze this image and determine if it contains ACTUAL TOTE BAGS (not just any bag). A true tote bag must have ALL these characteristics:
 
-1. Canvas or fabric bags with handles
-2. Simple rectangular/square shape
-3. Plain or branded designs
-4. Shopping or utility bags
-5. Designer or fashion tote bags
+**REQUIRED TOTE BAG FEATURES:**
+1. **Open-top design** - No zippers, flaps, or closures across the main opening
+2. **Two parallel handles** - Handles attached to opposite sides, meant for shoulder/hand carrying
+3. **Rectangular/square base** - Wide, flat bottom that can stand upright
+4. **Simple construction** - Usually canvas, cotton, leather, or sturdy fabric
+5. **Shopping/utility purpose** - Designed for carrying groceries, books, everyday items
+
+**NOT TOTE BAGS:**
+- Handbags with zippers, clasps, or flaps
+- Purses with single handles or chain straps
+- Crossbody bags or messenger bags
+- Backpacks or athletic bags
+- Designer bags with complex closures
+- Evening bags or clutches
+
+**COMMON REAL TOTES:**
+- Canvas shopping bags
+- Reusable grocery bags
+- Plain canvas totes with logos
+- Library/bookstore bags
+- Beach bags
+- Work totes for laptops/documents
+
+BE VERY STRICT - only identify actual tote bags, not designer handbags or purses.
 
 Respond ONLY with a valid JSON object containing:
-- isTote: boolean (true if tote bag is detected)
+- isTote: boolean (true ONLY if genuine tote bag detected)
 - confidence: number (0-100, your confidence percentage)
-- explanation: string (detailed explanation of what you see)`;
+- explanation: string (explain specifically why this is/isn't a tote bag based on the criteria above)`;
 
     case 'performative':
-      return `Please analyze this image for performative male traits popular in 2025 TikTok/social media culture. Look for a MALE person with these items:
+      return `Please analyze this image for MALE subjects displaying 2025 performative/looksmaxxing behavior. This must be a MALE person (not female) showing specific cultural indicators.
 
-**STATUS SYMBOLS:**
-- Labubu keychains/dolls attached to bags
-- Designer bag charms or collectible toys
-- Trendy accessories that signal wealth/taste
+**CRITICAL: MUST BE MALE SUBJECT** - If no male person is visible, return isPerformative: false.
 
-**FUNCTIONAL ACCESSORIES:**
-- Carabiners clipped to clothing/bags
-- Utility clips, key holders
-- "Tactical" or outdoor gear used for aesthetic
+**2025 PERFORMATIVE MALE INDICATORS:**
 
-**AESTHETIC ITEMS:**
-- Matcha drinks/food items
-- Tote bags (especially branded ones)
-- Skincare products visible
-- "Looksmaxxing" accessories
+**TIER 1 - HIGH PERFORMATIVE (Weight: 30-40 points each):**
+- Labubu/Pop Mart collectibles attached to bags or visible
+- Multiple expensive accessories clearly displayed for photos
+- "Sigma male" posing (trying to look effortlessly cool while clearly staged)
+- Looksmaxxing gear: jade rollers, skincare products, grooming tools
+- Strategic matcha drinks in frame (performative health aesthetic)
 
-**SIGMA MALE/PERFORMATIVE INDICATORS:**
+**TIER 2 - MEDIUM PERFORMATIVE (Weight: 15-25 points each):**
+- Carabiners attached to clothing/bags for aesthetic (not functional use)
+- Designer tote bags or branded accessories
 - Overly curated "candid" poses
-- Multiple accessories that seem intentionally displayed
-- Trying to appear nonchalant while clearly posing
+- Multiple rings, chains, or statement jewelry
+- Expensive sneakers prominently featured
 
-Analyze if this is a MALE displaying performative behavior. Rate performativeness 0-100.
+**TIER 3 - LOW PERFORMATIVE (Weight: 5-15 points each):**
+- Basic accessories or grooming items
+- Normal poses without obvious staging
+- Single branded item without over-display
+
+**NEGATIVE INDICATORS (Subtract points):**
+- Genuine functional use of items (not for show)
+- Natural, unstaged photos
+- Minimal accessories or styling
+
+**SCORING:**
+- 0-20: Not performative
+- 21-40: Mildly performative  
+- 41-65: Moderately performative
+- 66-85: Highly performative
+- 86-100: Extremely performative
+
+Analyze the cumulative performative score based on visible indicators.
 
 Respond ONLY with a valid JSON object containing:
-- isPerformative: boolean (true if performative traits detected)
-- performativeScore: number (0-100, how performative they appear)
-- confidence: number (0-100, your confidence in the analysis)
-- detectedItems: array of strings (list specific items you see)
-- explanation: string (detailed breakdown of performative elements)`;
+- isPerformative: boolean (true if score > 20 AND subject is male)
+- performativeScore: number (0-100, calculated score)
+- confidence: number (0-100, confidence in male identification and score)
+- detectedItems: array of strings (specific performative items identified)
+- sigmaLevel: string ("alpha", "beta", "sigma", or "omega" based on overall vibe)
+- tiktokFactor: number (0-100, how TikTok-core the aesthetic is)
+- explanation: string (detailed breakdown of scoring and why this is/isn't performative)`;
 
     default:
       return getPromptForModel('matcha'); // Default to matcha
